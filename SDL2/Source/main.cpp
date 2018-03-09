@@ -1,6 +1,6 @@
-#include <sys/time.h>  
 #include <SDL2/SDL.h> 
 #include <iostream>
+#include <chrono>
 using namespace std;
 
 #define PRINT(msg) cout<<msg<<endl;
@@ -28,17 +28,15 @@ int main()
     SDL_RenderPresent(render); 
     SDL_EventFilter ef = Callback; 
     SDL_AddEventWatch((SDL_EventFilter)Callback, nullptr);
-  
-    struct timeval tv;
-    gettimeofday(&tv,NULL);
-    auto timeA = ((double)(tv.tv_sec*1000 + tv.tv_usec/1000))/1000.0;
-    auto timeB = timeA;
+
+    std::chrono::system_clock::time_point timeA = std::chrono::system_clock::now();
+    std::chrono::system_clock::time_point timeB = timeA;
    
     while( quit == false )
     {     
-        gettimeofday(&tv,NULL);
-        timeB = ((double)(tv.tv_sec*1000 + tv.tv_usec/1000))/1000.0;
-        gFrames = 1.0f/(timeB - timeA);
+        timeB = std::chrono::system_clock::now();
+        auto diff = std::chrono::duration_cast<std::chrono::microseconds>(timeB-timeA).count();
+        gFrames = 1.0/((double)(diff)/1000000.0);
         timeA = timeB;
 
         //If there's an event to handle
@@ -56,7 +54,10 @@ int main()
                     case SDLK_RIGHT: PRINT("SDLK_RIGHT"); break;
                 }
             }
-
+            else if(event.type == SDL_MOUSEBUTTONDOWN)
+            {
+                
+            }
             //If the user has Xed out the window
             else if( event.type == SDL_QUIT )
             {
@@ -71,8 +72,6 @@ int main()
             SDL_RenderClear(render);  
             SDL_RenderPresent(render); 
         }
-
-        gFrames = 1.0f/(timeB - timeA);
     }
 
     SDL_DestroyWindow(window);  
@@ -105,10 +104,3 @@ void ComputeColor(float& color, bool& control)
     else
         color+=0.01;
 }
-
-long getCurrentTime()    
-{    
-   struct timeval tv;    
-   gettimeofday(&tv,NULL);    
-   return tv.tv_sec * 1000 + tv.tv_usec / 1000;    
-} 
